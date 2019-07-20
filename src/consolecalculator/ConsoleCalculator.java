@@ -18,6 +18,7 @@ public class ConsoleCalculator {
         System.out.println("Let's try push to Git");
         System.out.println("Let's try push to Git");
         System.out.println("Let's try push to Git");
+        System.out.println("Let's try push to Git");
         
     }
     
