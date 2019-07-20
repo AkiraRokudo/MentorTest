@@ -15,11 +15,10 @@ public class ConsoleCalculator {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        System.out.println("Let's try push to Git");
-        System.out.println("Let's try push to Git");
-        System.out.println("Let's try push to Git");
-        System.out.println("Let's try push to Git");
-        
+        startApp();        
     }
     
+    private static void startApp() {
+        //and it's work, while user input symbols
+    }
 }
