@@ -2,6 +2,8 @@ package consolecalculator;
 
 import java.util.Scanner;
 
+import java.util.Scanner;
+
 /**
  *
  * @author Akira
