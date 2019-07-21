@@ -13,7 +13,7 @@ public class ConsoleCalculator {
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) {        
         startApp();
         
         //создать класс Number
@@ -37,12 +37,30 @@ public class ConsoleCalculator {
         //and it's work, while user input symbols
         Scanner in = new Scanner(System.in);
         String inputString = "valueForStart";
+        Character specialSymb = '\u0305';
+    //    System.out.println("I" + specialSymb);
+    
+    
+        //тестовый соут
+        System.out.println(CalculatorNumber.RomanNumberTransfer.
+                toRomanNumber(
+              //  2573146357L
+                    //   1289354246
+                        99
+                //toInteger( 
+//"d"+specialSymb+specialSymb+specialSymb
+            //    "MDXLxVIII"
+        ));
+        
+        
+   //     System.out.println(Integer.MAX_VALUE);
         printFirstMessages();        
         while (true) {
             if("exit".equals(inputString = in.next())) {
                 break;
             }
-            System.out.println("Введенное выражение:" + inputString);
+            CalculatorParser resultParse = CalculatorParser.parse(inputString);
+            System.out.println("Результат расчетов: " + calculate(resultParse));
         }
         in.close();
         System.out.println("Программа завершила свою работу");
@@ -52,5 +70,34 @@ public class ConsoleCalculator {
         System.out.println("Калькулятор 0.1");
         System.out.println("ВВедите данные. Для завершения работы, введите слово 'exit'");
         //TODO: дописать хелпер.
+    }
+    
+    private static String calculate(CalculatorParser resultParse) {
+        check(resultParse);
+        long result = 0L;
+        switch(resultParse.getArithmeticOperationSymbol()) {
+            case"+":
+                result = resultParse.getFirstNumber().getValue()+ resultParse.getSecondNumber().getValue();
+                break;
+            case"*":
+                break;
+            case"/":
+                break;
+            case"-":
+                break;
+        }
+        return null;
+    }
+    
+    /**
+     * Проверим результат разбора на соответствие
+     * @param resultParse 
+     */
+    private static void check(CalculatorParser resultParse) {
+        if(!resultParse.getFirstNumber().getIsRomanNumber().equals
+            (resultParse.getSecondNumber().getIsRomanNumber())) {
+            throw new CalculatorException("Запрещено производить арифметические операции над числами в разных системах исчисления");
+        }
+        
     }
 }
