@@ -3,6 +3,9 @@ package consolecalculator;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  *
@@ -16,7 +19,7 @@ public class CalculatorNumber {
 
     public CalculatorNumber(String str) {
         str = str.trim();
-        isRomanNumber = isDigit(str);
+        isRomanNumber = isNonDigit(str);
         if (isRomanNumber) {
             value = RomanNumberTransfer.toInteger(str);
         } else {
@@ -34,7 +37,7 @@ public class CalculatorNumber {
         return value;
     }
 
-    private boolean isDigit(String str) {
+    private boolean isNonDigit(String str) {
         return str.chars().anyMatch(c -> !Character.isDigit(c));
 
     }
@@ -44,18 +47,41 @@ public class CalculatorNumber {
      */
     public static class RomanNumberTransfer {
 
-        static HashMap<Character, Integer> interpretationDigitsMap;
-
+        public static HashMap<Character, Integer> interpretationDigitsMap;
+        private static List<Long> allowedPrevLessCurList = Stream.of(4L, //IV Остальные нам не подойдут.
+                9L, //IX
+                40L, //XL 
+                90L, //XC
+                400L,//CD
+                900L //CM
+        ).collect(Collectors.toList());
+        
+        private static List<String> prohibitiedList = Stream.of("IIII", //Такие использовать нельзя
+                "VV", 
+                "XXXX", 
+                "LL", 
+                "CCCC", 
+                "DD", 
+                "MMMM"
+        ).collect(Collectors.toList());
+        
+        
+        
+        public static HashMap<Character, Integer> interpretationHalfDigitsMap; //для проверки
         //TODO; Реализовать возможность более легкого ввода 4000+
+
         static {
+            
             interpretationDigitsMap = new HashMap();
+            interpretationHalfDigitsMap = new HashMap();
             interpretationDigitsMap.put('I', 1);
-            interpretationDigitsMap.put('V', 5); //-
+            interpretationHalfDigitsMap.put('V', 5); //-
             interpretationDigitsMap.put('X', 10);
-            interpretationDigitsMap.put('L', 50); //-
+            interpretationHalfDigitsMap.put('L', 50); //-
             interpretationDigitsMap.put('C', 100);
-            interpretationDigitsMap.put('D', 500); //-
+            interpretationHalfDigitsMap.put('D', 500); //-
             interpretationDigitsMap.put('M', 1000);
+            interpretationDigitsMap.putAll(interpretationHalfDigitsMap);
         }
 
         /**
@@ -64,93 +90,114 @@ public class CalculatorNumber {
          * @param romanNumber
          * @return
          */
-        public static int toInteger(String romanNumber) {
+        public static int toInteger(final String romanNumber) {
+            //TODO: проанализировать на вопрос кэша до 100 к примеру.
             //проверка что это вообще число нам подходит
-            romanNumber = romanNumber.toUpperCase();
+            final String testRomanNumber = romanNumber.toUpperCase();
+            System.out.print(testRomanNumber+" ");
             // romanNumber.chars().forEach(c-> System.out.println(c));
-            if (romanNumber.chars().anyMatch(c -> (!interpretationDigitsMap.containsKey((char) c) && (char) c != specialSymb))) {
-                throw new CalculatorException("Ошибка при интерпретации числа '" + romanNumber + "' - присутствуют неподходящие символы");
+            if (testRomanNumber.chars().anyMatch(c -> (!interpretationDigitsMap.containsKey((char) c) && (char) c != specialSymb))) {
+                throw new CalculatorException("Ошибка при интерпретации строки '" + romanNumber + "' - присутствуют неподходящие символы");
             }
-
-            //1. Каждые 2 числа связаны.
-            //2. если лев > прав значит все ок плюсуем
-            //3 если лев = прав. Значит ок если это единичные.значит все ок плюсуем
-            //4 если лев = прав и при этом не больше 3!
-            //5 если лев < прав значит надо от прав отнять лев.
-            //6 из 5 пункта есть важный фактор - нельзя после него
-            //добавить к лев прав.
-            //значит нужна проверка, что если предыдущее сравнение было лев < прав
-            //то не должно быть лев > прав сейчас
+            if (prohibitiedList.stream().anyMatch(ps-> testRomanNumber.contains(ps))) {
+                throw new CalculatorException("Ошибка при интерпретации строки '" + romanNumber + "' - недопустимо использование более 3 для единичных и 2 для половинных символов одинаковых символов подряд");
+            }
+            
+            //проверка на отсутствие IIII VV и т.д.
             //IVII нельзя
             //IXX тоже нельзя.
+            boolean prevLess = false; // TODO: провести анализ на предмет нужности
+            long prevprevSymb = 0;
             long value = 0; //итоговое число
             int multiplierCount = 0; //множитель числа на 10^3
             int equalsSymbolCount = 1; //количество одинаковых символов подряд
             if (romanNumber.charAt(0) == specialSymb) {
                 throw new CalculatorException("Ошибка при интерпретации числа '" + romanNumber + "' - Первым символом не может быть символ надчеркивания");
             }
-            long prevSymb = 0; //однозначно интерпретируется, иначе бы мы упали раньше.
+            long prevSymb = 0;
             for (Character charSymb : romanNumber.toCharArray()) {
-                if (multiplierCount > 2 && (charSymb != 'I')) {
-                    throw new CalculatorException("Ошибка при интерпретации числа '" + romanNumber + "' - не может быть более 2 символов подчеркивания подряд,если следующий символ не 'I'");
-                }
+                //если это черта - переходим к следующему.
+
                 if (charSymb.equals(specialSymb)) {
                     multiplierCount++;
                     prevSymb *= 1000;
-                    if (multiplierCount > 3) {//1.000.000.000
-                        throw new CalculatorException("Ошибка при интерпретации числа '" + romanNumber + "' - не может быть более 3 символов подчеркивания подряд");
+                    if (multiplierCount > 2 && (charSymb != 'I')) {
+                        throw new CalculatorException("Ошибка при интерпретации числа '" + romanNumber + "' - не может быть более 2 символов подчеркивания подряд,если следующий символ не 'I'");
                     }
                 } else {
                     value += prevSymb;
-
-                    long curSymb = interpretationDigitsMap.get(charSymb);
                     multiplierCount = 0; //обнулим множитель
 
-                    //значит это не спецсимвол. Следовательно - он должен быть либо больше, либо меньше предыдущего.
-                    if (prevSymb == curSymb) { //Это возможно только в 1 случае - если мы имеем дело с 'I'
-                        if ((charSymb == 'D' || charSymb == 'L' || charSymb == 'V') && value != 0) { //кратные 5 нельзя использовать дважды.
-                            throw new CalculatorException("Ошибка при интерпретации числа '" + romanNumber + "'. Символ '" + charSymb + "' не может быть указан дважды подряд");
-                        }
-                        //если символ указан дважды подряд - значит он только в плюс идти может.
+                    long curSymb = interpretationDigitsMap.get(charSymb);
+
+                    if (value == 0) { //блок только для 1 захода
+                        prevSymb = curSymb;
+                        continue;
+                    }
+
+                    if (prevSymb == curSymb) { //значит это II XX CC или MM
+                        prevSymb = curSymb;
                         equalsSymbolCount++;
                         if (equalsSymbolCount > 3) {
-                            throw new CalculatorException("Ошибка при интерпретации числа '" + romanNumber + "'. Символ '" + charSymb + "' не может быть указан более 3 раз подряд");
+                            throw new CalculatorException("ошибка много подряд одинаковых");
                         }
+                        if (prevLess) {
+                            throw new CalculatorException("Нельзя числа IXX");
+                        }
+                        prevLess = false;
+                    } else { //значит либо больше либо меньше
+                        if (prevSymb > curSymb) { // если не IXI то ок.
+                            if (prevLess) { //ICX или ICI на 2 сверке
+                                if (prevprevSymb <= curSymb) 
+                                    throw new CalculatorException("Нельзя числа ICI или ICX");
+                                    prevLess = false; //очень даже reachable statement, хоть и не выглядит таковым)))
+                            }
+                        } else { //prevSymb < curSymb
+                            if (prevLess) {
+                                throw new CalculatorException("Нельзя числа ICM");
+                            }
+                            if (!isPosibbleValue(curSymb, prevSymb, multiplierCount)) {// блочим варианты 1000 50000
+                                throw new CalculatorException("Недопустимый вариант сочетания меньшей цифры слева и большей справа");
+                            }
+                            if (equalsSymbolCount > 1) { //iix iiv отбрасываем
+                                throw new CalculatorException("Недопустимо наличие 2 одинаковых символов с последующим большим символом - 'IIX' к примеру");
+                            }
+                            if (prevprevSymb != 0) { //если не второе сравнение
+                                if (prevprevSymb == curSymb) { //viv или xix
+                                    if (interpretationHalfDigitsMap.containsKey(charSymb)) {
+                                        //значит это v,l,или d
+                                        throw new CalculatorException("Нельзя числа VIV ");
+                                    }
+                                } //значит prevprevSymb <> curSymb.
+                                //рабочими вариантами может быть только prevprevSymb<>prevSymb(долгая доказывать)
+                                //обработаем этот факт.
+                                else {
+                                    if (prevprevSymb < curSymb) { //vix   //xci
+                                        throw new CalculatorException("Нельзя числа VIX ");
+                                    }
+                                }
+                            }
+                            //если они одинаковы(xix) то должны быть разрешены (нельзя viv)
+
+                            value -= 2 * (prevSymb);//ICX = -1 
+                            prevLess = true;
+                        }
+                        prevprevSymb = prevSymb; //ixi   
                         prevSymb = curSymb;
-                        continue; //можно конечно и оформить через иф елс, или доп проверки ниже, но так быстрее
+                        equalsSymbolCount = 1;
+
                     }
-                    if (prevSymb > curSymb) {
-                        //continue;
-                        //просто добавим
-                    } else { //prevSymb < curSymb
-                        value -= prevSymb * 2; //ибо в прошлую итерацию мы её прибавили
-                    }
-                    //список тестов
-                    //нет арифметической операции(ао)
-                    //несколько ао
-                    //несколько разных ао
-                    //не римские символы, хотя это не число.
-
-                    //символы не одинаковы - сбросим счетчик 
-                    equalsSymbolCount = 1;
-
-                    prevSymb = curSymb;
-                    //    value+=interpretationDigitsMap.get(charSymb)*multiplier;
-
                 }
 
-                //идем слева направо.
-                //допустимо 3 множителя подряд(i___) = 2kkk
-                //считаем мы в лонгах
-                //если 3 множителя подряд и следующий символ не i - ругаемся
-                //
             }
+            
+            //вышли из цикла
             if (multiplierCount > 2 && (prevSymb != 'I')) { //проверка последнего числа
                 throw new CalculatorException("Ошибка при интерпретации числа '" + romanNumber + "' - не может быть более 2 символов подчеркивания подряд,если следующий символ не 'I'");
             }
             value += prevSymb;
-            
-            int ivalue = (int)value;
+
+            int ivalue = (int) value;
             return ivalue;
         }
 
@@ -180,15 +227,15 @@ public class CalculatorNumber {
                     //TODO:переделать на кейз под 5 позиций. и с 3 брейками
                     case "3": { //III
                         sb.append(getPair(romanaPair, false));
-                        sb.append(getUpperScore((iteration) - 1 -(1 == romanaPair ? 1:0)));
+                        sb.append(getUpperScore((iteration) - 1 - (1 == romanaPair ? 1 : 0)));
                     }
                     case "2": {//II
                         sb.append(getPair(romanaPair, false));
-                        sb.append(getUpperScore((iteration) - 1-(1 == romanaPair ? 1:0)));
+                        sb.append(getUpperScore((iteration) - 1 - (1 == romanaPair ? 1 : 0)));
                     }
                     case "1": {//I
                         sb.append(getPair(romanaPair, false));
-                        sb.append(getUpperScore((iteration) - 1-(1 == romanaPair ? 1:0)));
+                        sb.append(getUpperScore((iteration) - 1 - (1 == romanaPair ? 1 : 0)));
                         break;
                     }
                     case "4": {//IV
@@ -229,14 +276,14 @@ public class CalculatorNumber {
                     }
                     case "9": {//IX
                         sb.append(getPair(romanaPair, false));
-                        sb.append(getUpperScore((iteration) - 1 - (1 == romanaPair ? 1:0)));
+                        sb.append(getUpperScore((iteration) - 1 - (1 == romanaPair ? 1 : 0)));
                         sb.append(getPair((romanaPair + 1), false));
                         sb.append(getUpperScore((iteration) - 1));
                         break;
                     }
-                }                
+                }
                 //2-1-0-2-1-0...
-                switch(romanaPair) {
+                switch (romanaPair) {
                     case 0: {
                         romanaPair = 2;
                         break;
@@ -254,14 +301,18 @@ public class CalculatorNumber {
             }
             //TODO:исправить последниее единичные разряды если есть на правильные.
             String s = sb.toString();
-            if(s.length() > 3) {
-                String sub = s.substring(s.length()-3);
-             //   sub;
-                s = s.substring(0,s.length()-3).concat(sub.replaceAll("M", "I"));
+            if (s.length() > 3) {
+                String sub = s.substring(s.length() - 3);
+                //   sub;
+                s = s.substring(0, s.length() - 3).concat(sub.replaceAll("M", "I"));
             } else {
-                s.replaceAll("M", "I");
+                s = s.replaceAll("M", "I");
             }
             return s;
+        }
+
+        private static Boolean isPosibbleValue(Long curSymb, Long prevSymb, Integer multiplierCount) {
+            return allowedPrevLessCurList.contains((curSymb - prevSymb) / (multiplierCount == 0 ? 1 : multiplierCount * 1000));
         }
     }
 
@@ -285,18 +336,19 @@ public class CalculatorNumber {
 
     //перенести в утилсы
     private static String getPair(int m, boolean isHalf) {
-        
+
         switch (m) {
             case 2:
                 return isHalf ? "L" : "X";
             case 1:
                 return isHalf ? "V" : "M";
-                
+
             case 3: //хак - 99  = xcix 
             case 0:
                 return isHalf ? "D" : "C";
+            default:
+                throw new CalculatorException("неизвестная пара символов");
         }
-        return null;
     }
 
     private static String getUpperScore(Integer scoreCount) {
@@ -306,4 +358,5 @@ public class CalculatorNumber {
         }
         return scoreBuilder.toString();
     }
+
 }

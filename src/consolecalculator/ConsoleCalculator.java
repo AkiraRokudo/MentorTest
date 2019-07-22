@@ -41,16 +41,88 @@ public class ConsoleCalculator {
     //    System.out.println("I" + specialSymb);
     
     
-        //тестовый соут
-        System.out.println(CalculatorNumber.RomanNumberTransfer.
-                toRomanNumber(
-              //  2573146357L
-                    //   1289354246
-                        99
-                //toInteger( 
-//"d"+specialSymb+specialSymb+specialSymb
-            //    "MDXLxVIII"
-        ));
+    /*Тест на все двоичные сочетания
+        for (Character object : CalculatorNumber.RomanNumberTransfer.interpretationDigitsMap.keySet()) {
+            for (Character character : CalculatorNumber.RomanNumberTransfer.interpretationDigitsMap.keySet()) {
+                //System.out.print(object + "" + character+" ");
+                try {
+                System.out.println(CalculatorNumber.RomanNumberTransfer.toInteger(object + "" + character));
+                } catch (CalculatorException e) {
+                    System.out.println(e.getMessage());
+                }
+            }
+        }
+         */
+    
+//Удачные плюс тесты
+//  "iii"   
+//  "vii"  
+//  "xii"
+//  "xxv"
+//  "xxi"
+//  "xix"
+//  "lvi"
+//  "xiv"
+//  "xvi"                        
+//  "dxv"                        
+//  "dlv"                        
+//  "dxl"                        
+//  "dxc"                        
+//  "xci"                        
+//  "xli"                      
+//  "xlv"    
+//  "xcv"         
+         //17+               
+                        
+//должны правильно считаться                                        
+                        
+                        
+//доработать - должны падать             
+                 
+                        
+//Удачные минус тесты               
+//  "ixx"                          
+//  "icc"                          
+//  "vxx"                          
+//  "iic"                          
+//  "iiv"                          
+//  "iil"                          
+//  "ixi"                          
+//  "ici"                          
+//  "vxv"                          
+//  "vcv"                          
+//  "ivi"                          
+//  "ili"                          
+//  "vlv"                          
+//  "vdv"                          
+//  "viv"                          
+//  "lil"                          
+//  "xvx"                          
+//  "lvl"                          
+//  "cvl"                          
+//  "cil"                         
+//  "ldv"       
+//  "ldi"       
+//  "ldx"       
+//  "lcv"       
+//  "lci"       
+//  "xmi"                           
+//  "ivx"       
+//  "ivl"       
+//  "vld"       
+//  "vlc"                               
+//  "ixv"       
+//  "vcl"       
+//  "icx"       
+//  "ilx"       
+//  "ilv"       
+//  "vlx"       
+//  "vix"                       
+                                 
+                        
+                        
+     
+   //     ));
         
         
    //     System.out.println(Integer.MAX_VALUE);
@@ -72,6 +144,7 @@ public class ConsoleCalculator {
         //TODO: дописать хелпер.
     }
     
+    //TODO:
     private static String calculate(CalculatorParser resultParse) {
         check(resultParse);
         long result = 0L;
